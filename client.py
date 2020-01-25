@@ -19,5 +19,10 @@ while True:
 
     print(response)
 
-    my_message = input("> ").encode('utf-8') + b'\n'
-    client_socket.sendall(my_message)
+    my_message = input("> ")
+    
+    encoded_message = my_message.encode('utf-8') + b'\n'
+    client_socket.sendall(encoded_message)
+
+    if my_message == 'quit':
+        sys.exit()

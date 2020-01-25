@@ -1,6 +1,5 @@
 import socket
 
-
 class Server(object):
     """
     An adventure game socket server
@@ -61,6 +60,8 @@ class Server(object):
             socket.SOCK_STREAM,
             socket.IPPROTO_TCP)
 
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
         address = ('127.0.0.1', self.port)
         self.socket.bind(address)
         self.socket.listen(1)
@@ -79,9 +80,16 @@ class Server(object):
         :return: str
         """
 
-        # TODO: YOUR CODE HERE
+        # Define descriptions for each room
+        descriptions = [
+            "You are in the room with the white wallpaper.",
+            "You are in the room with the green wallpaper.",
+            "You are in the room with the brown wallpaper.",
+            "You are in the room with the mauve wallpaper."
+        ]
 
-        pass
+        # Return the description for the given room
+        return descriptions[room_number]
 
     def greet(self):
         """
@@ -108,9 +116,11 @@ class Server(object):
         :return: None 
         """
 
-        # TODO: YOUR CODE HERE
+        received = b''
+        while b'\n' not in received:
+            received += self.client_connection.recv(16)
 
-        pass
+        self.input_buffer = received.decode().strip()
 
     def move(self, argument):
         """
@@ -133,9 +143,19 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        # Available room exits for each room
+        room_exits = {
+            0: {"north": 3, "west": 1, "east": 2},
+            1: {"east": 0},
+            2: {"west": 0},
+            3: {"south": 0}
+        }
 
-        pass
+        # Set the new room based on current room and argument
+        self.room = room_exits[self.room][argument]
+
+        # Send the new room description to the output buffer
+        self.output_buffer = self.room_description(self.room)
 
     def say(self, argument):
         """
@@ -151,9 +171,8 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        # Format the response string and send to output buffer
+        self.output_buffer = f'You say, "{argument}"'
 
     def quit(self, argument):
         """
@@ -167,9 +186,8 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.done = True
+        self.output_buffer = "Goodbye!"
 
     def route(self):
         """
@@ -183,9 +201,22 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        # Split the input buffer based on space
+        received = self.input_buffer.split(" ")
 
-        pass
+        # Split into command and arguments
+        command = received.pop(0)
+        arguments = " ".join(received)
+
+        # Define available commands and tie to methods
+        routes = {
+            'quit': self.quit,
+            'move': self.move,
+            'say': self.say
+        }
+        
+        # Call approrpiate method based on command
+        routes[command](arguments)
 
     def push_output(self):
         """
@@ -197,9 +228,8 @@ class Server(object):
         :return: None 
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        # Format and sent the output, byte encoded
+        self.client_connection.sendall(b"OK! " + self.output_buffer.encode() + b"\n")
 
     def serve(self):
         self.connect()
